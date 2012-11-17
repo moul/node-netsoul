@@ -12,6 +12,8 @@ class Protocol
         message = new Message
         message.line =  line
         message.split = line.split(' ')
+        if message.split[0] in ['salut', 'ping', 'rep']
+            message.type = message.split[0]
         return message
 
 module.exports = Protocol

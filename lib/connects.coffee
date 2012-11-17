@@ -1,21 +1,7 @@
 protocol = require './protocol'
+utils    = require './utils'
 
-class PubSub
-    constructor: ->
-        @subs = {}
-
-    on: (event, callback, id = null) =>
-        @subs[event] = [] if not @subs[event]?
-        @subs[event].push
-            callback: callback
-            id:       id
-
-    emit: (event, args...) =>
-        return false if not @subs[event]?
-        for subscription in @subs[event]
-            subscription.callback args...
-
-class ConnectBase extends PubSub
+class ConnectBase extends utils.PubSub
     constructor: (@options = {}) ->
         @connected = false
         do @handleOptions
@@ -47,9 +33,13 @@ class ConnectNet extends ConnectBase
         @socket.on 'data',    @onBuffer
         @socket.on 'end',     @onDisconnect
         @socket.on 'error',   @onError
+        @socket.on 'close',   @onClose
 
     send: (message, encoding = null, callback = null) =>
-        data = message.join(" ") + "\r\n"
+        if typeof(message) is 'string'
+            data = "#{message}\r\n"
+        else
+            data = message.join(" ") + "\r\n"
         @socket.write data, encoding, callback
 
     disconnect: =>
@@ -81,7 +71,12 @@ class ConnectNet extends ConnectBase
     onDisconnect: =>
         @debug "ConnectNet::onDisconnect"
         @connected = false
-        @emit 'socketDisconnect'
+        @emit 'disconnect'
+
+    onClose: =>
+        @debug "ConnectNet::onClose"
+        @connected = false
+        @emit 'disconnect'
 
     onError: (error) =>
         @debug "ConnectNet::onError", error
@@ -121,4 +116,3 @@ module.exports =
     tcp:        ConnectTCP
     net:        ConnectNet
     base:       ConnectBase
-    PubSub:     PubSub

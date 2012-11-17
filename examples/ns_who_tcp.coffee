@@ -3,8 +3,8 @@
 # usage: %prog                  ns_who for everybody
 #        %prog touron_m         ns_who for touron_m
 #        %prog touron_m jog     ns_who for touron_m and jog
-#
-# socat -v UNIX-LISTEN:/tmp/netsoul.sock,fork,reuseaddr TCP-CONNECT:ns-server.epitech.eu:4242
+
+
 
 # clear terminal
 #process.stdout.write '\u001B[2J\u001B[0;0f'

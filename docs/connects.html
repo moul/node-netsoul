@@ -1,0 +1,114 @@
+<!DOCTYPE html>  <html> <head>   <title>connects.coffee</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="clients.html">                 clients.coffee               </a>                                           <a class="source" href="connects.html">                 connects.coffee               </a>                                           <a class="source" href="protocol.html">                 protocol.coffee               </a>                                           <a class="source" href="utils.html">                 utils.coffee               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               connects.coffee             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="nv">protocol = </span><span class="nx">require</span> <span class="s">&#39;./protocol&#39;</span>
+<span class="nv">utils    = </span><span class="nx">require</span> <span class="s">&#39;./utils&#39;</span>
+
+<span class="k">class</span> <span class="nx">ConnectBase</span> <span class="k">extends</span> <span class="nx">utils</span><span class="p">.</span><span class="nx">PubSub</span>
+    <span class="nv">constructor: </span><span class="nf">(@options = {}) -&gt;</span>
+        <span class="vi">@connected = </span><span class="kc">false</span>
+        <span class="nx">do</span> <span class="nx">@handleOptions</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ConnectBase::constructor&#39;</span>
+        <span class="k">super</span> <span class="nx">@options</span>
+
+    <span class="nv">debug: </span><span class="p">(</span><span class="nx">args</span><span class="p">...)</span> <span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>   <span class="s">&quot;</span><span class="si">#{</span><span class="nx">@constructor</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">&gt; &quot;</span><span class="p">,</span> <span class="nx">args</span><span class="p">...</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">debug</span>
+
+    <span class="nv">verbose: </span><span class="p">(</span><span class="nx">args</span><span class="p">...)</span> <span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>   <span class="s">&quot;</span><span class="si">#{</span><span class="nx">@constructor</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">&gt; &quot;</span><span class="p">,</span> <span class="nx">args</span><span class="p">...</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">verbose</span>
+
+    <span class="nv">handleOptions: </span><span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>    <span class="o">?=</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">verbose</span>  <span class="o">?=</span> <span class="kc">false</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">debug</span>    <span class="o">?=</span> <span class="kc">false</span>
+        <span class="nx">@debug</span> <span class="s">&#39;handleOptions&#39;</span>
+
+    <span class="nv">connect: </span><span class="o">=&gt;</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@socket</span><span class="o">?</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="s">&#39;socket does not exists&#39;</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>classes using lib net</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="k">class</span> <span class="nx">ConnectNet</span> <span class="k">extends</span> <span class="nx">ConnectBase</span>
+    <span class="nv">connect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectNet::connect&quot;</span>
+        <span class="k">super</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;connect&#39;</span><span class="p">,</span> <span class="nx">@onConnect</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;data&#39;</span><span class="p">,</span>    <span class="nx">@onBuffer</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;end&#39;</span><span class="p">,</span>     <span class="nx">@onDisconnect</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;error&#39;</span><span class="p">,</span>   <span class="nx">@onError</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;close&#39;</span><span class="p">,</span>   <span class="nx">@onClose</span>
+
+    <span class="nv">send: </span><span class="p">(</span><span class="nx">message</span><span class="p">,</span> <span class="nv">encoding = </span><span class="kc">null</span><span class="p">,</span> <span class="nv">callback = </span><span class="kc">null</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="k">if</span> <span class="k">typeof</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="o">is</span> <span class="s">&#39;string&#39;</span>
+            <span class="nv">data = </span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">message</span><span class="si">}</span><span class="s">\r\n&quot;</span>
+        <span class="k">else</span>
+            <span class="nv">data = </span><span class="nx">message</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;\r\n&quot;</span>
+        <span class="nx">@socket</span><span class="p">.</span><span class="nx">write</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">encoding</span><span class="p">,</span> <span class="nx">callback</span>
+
+    <span class="nv">disconnect: </span><span class="o">=&gt;</span>
+        <span class="nx">do</span> <span class="nx">@socket</span><span class="p">.</span><span class="nx">end</span>
+        <span class="nx">do</span> <span class="nx">@onDisconnect</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Net callbacks</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nv">onConnect: </span><span class="o">=&gt;</span>
+        <span class="vi">@connected = </span><span class="kc">true</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectNet::onConnect&quot;</span>
+        <span class="nx">@emit</span> <span class="s">&#39;connect&#39;</span>
+
+    <span class="nv">onBuffer: </span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ConnectNet::onBuffer&#39;</span><span class="p">,</span> <span class="nx">buffer</span>
+        <span class="nx">@emit</span> <span class="s">&#39;buffer&#39;</span><span class="p">,</span>  <span class="nx">buffer</span>
+        <span class="nx">@handleLine</span> <span class="nx">line</span> <span class="k">for</span> <span class="nx">line</span> <span class="k">in</span> <span class="nx">buffer</span><span class="p">.</span><span class="nx">toString</span><span class="p">().</span><span class="nx">split</span><span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">)</span>
+
+    <span class="nv">handleLine: </span><span class="p">(</span><span class="nx">line</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nv">line    = </span><span class="nx">line</span><span class="p">.</span><span class="nx">replace</span> <span class="sr">/^\s+|\s+$/g</span><span class="p">,</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">false</span> <span class="k">if</span> <span class="o">not</span> <span class="nx">line</span><span class="p">.</span><span class="nx">length</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ConnectNet::handleLine&#39;</span><span class="p">,</span> <span class="nx">line</span>
+        <span class="nv">message = </span><span class="nx">protocol</span><span class="o">::</span><span class="nx">parseData</span> <span class="nx">line</span>
+
+        <span class="nx">@debug</span> <span class="s">&#39;protocol::parseData&#39;</span><span class="p">,</span> <span class="nx">message</span>
+
+        <span class="nx">@emit</span> <span class="s">&#39;data&#39;</span><span class="p">,</span>    <span class="nx">line</span>
+        <span class="nx">@emit</span> <span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="nx">message</span>
+
+    <span class="nv">onDisconnect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectNet::onDisconnect&quot;</span>
+        <span class="vi">@connected = </span><span class="kc">false</span>
+        <span class="nx">@emit</span> <span class="s">&#39;disconnect&#39;</span>
+
+    <span class="nv">onClose: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectNet::onClose&quot;</span>
+        <span class="vi">@connected = </span><span class="kc">false</span>
+        <span class="nx">@emit</span> <span class="s">&#39;disconnect&#39;</span>
+
+    <span class="nv">onError: </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectNet::onError&quot;</span><span class="p">,</span> <span class="nx">error</span>
+        <span class="nx">@emit</span> <span class="s">&#39;error&#39;</span><span class="p">,</span> <span class="nx">error</span>
+
+<span class="k">class</span> <span class="nx">ConnectTCP</span> <span class="k">extends</span> <span class="nx">ConnectNet</span>
+    <span class="nv">handleOptions: </span><span class="o">=&gt;</span>
+        <span class="k">super</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">host</span>         <span class="o">?=</span> <span class="s">&#39;ns-server.epitech.net&#39;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">port</span>         <span class="o">?=</span> <span class="mi">4242</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">localAddress</span> <span class="o">?=</span> <span class="s">&#39;0.0.0.0&#39;</span>
+
+    <span class="nv">connect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectTCP::connect&quot;</span>
+        <span class="nx">@verbose</span> <span class="s">&quot;Connecting to </span><span class="si">#{</span><span class="nx">@options</span><span class="p">.</span><span class="nx">host</span><span class="si">}</span><span class="s">:</span><span class="si">#{</span><span class="nx">@options</span><span class="p">.</span><span class="nx">port</span><span class="si">}</span><span class="s">...&quot;</span>
+        <span class="vi">@socket = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;net&#39;</span><span class="p">).</span><span class="nx">connect</span>
+            <span class="nv">port: </span>        <span class="nx">@options</span><span class="p">.</span><span class="nx">port</span>
+            <span class="nv">host: </span>        <span class="nx">@options</span><span class="p">.</span><span class="nx">host</span>
+            <span class="nv">localAddress: </span><span class="nx">@options</span><span class="p">.</span><span class="nx">localAddress</span>
+        <span class="k">super</span>
+
+<span class="k">class</span> <span class="nx">ConnectUnixSocket</span> <span class="k">extends</span> <span class="nx">ConnectNet</span>
+    <span class="nv">handleOptions: </span><span class="o">=&gt;</span>
+        <span class="k">super</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">path</span><span class="o">?</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="s">&#39;unix socket not specified&#39;</span>
+
+    <span class="nv">connect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ConnectUnixSocket::connect&quot;</span>
+        <span class="nx">@verbose</span> <span class="s">&quot;Connecting to </span><span class="si">#{</span><span class="nx">@options</span><span class="p">.</span><span class="nx">path</span><span class="si">}</span><span class="s">...&quot;</span>
+        <span class="vi">@socket = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;net&#39;</span><span class="p">).</span><span class="nx">connect</span>
+            <span class="nv">path: </span><span class="nx">@options</span><span class="p">.</span><span class="nx">path</span>
+        <span class="k">super</span>
+
+<span class="nv">module.exports =</span>
+    <span class="nv">unixSocket: </span><span class="nx">ConnectUnixSocket</span>
+    <span class="nv">tcp: </span>       <span class="nx">ConnectTCP</span>
+    <span class="nv">net: </span>       <span class="nx">ConnectNet</span>
+    <span class="nv">base: </span>      <span class="nx">ConnectBase</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

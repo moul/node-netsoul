@@ -1,0 +1,114 @@
+<!DOCTYPE html>  <html> <head>   <title>clients.coffee</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="clients.html">                 clients.coffee               </a>                                           <a class="source" href="connects.html">                 connects.coffee               </a>                                           <a class="source" href="protocol.html">                 protocol.coffee               </a>                                           <a class="source" href="utils.html">                 utils.coffee               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               clients.coffee             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="nv">protocol = </span><span class="nx">require</span> <span class="s">&#39;./protocol&#39;</span>
+<span class="nv">utils    = </span><span class="nx">require</span> <span class="s">&#39;./utils&#39;</span>
+<span class="nv">crypto   = </span><span class="nx">require</span> <span class="s">&#39;crypto&#39;</span>
+
+<span class="k">class</span> <span class="nx">ClientBase</span> <span class="k">extends</span> <span class="nx">utils</span><span class="p">.</span><span class="nx">PubSub</span>
+    <span class="nv">constructor: </span><span class="nf">(@options = {}) -&gt;</span>
+        <span class="k">super</span>
+        <span class="nx">do</span> <span class="nx">@handleOptions</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::constructor&#39;</span>
+        <span class="nx">do</span> <span class="nx">@setupConnect</span>
+        <span class="nx">do</span> <span class="nx">@setupClient</span>
+
+    <span class="nv">debug: </span><span class="p">(</span><span class="nx">args</span><span class="p">...)</span> <span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>   <span class="s">&quot;</span><span class="si">#{</span><span class="nx">@constructor</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">&gt; &quot;</span><span class="p">,</span> <span class="nx">args</span><span class="p">...</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">debug</span>
+
+    <span class="nv">verbose: </span><span class="p">(</span><span class="nx">args</span><span class="p">...)</span> <span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>   <span class="s">&quot;</span><span class="si">#{</span><span class="nx">@constructor</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="s">&gt; &quot;</span><span class="p">,</span> <span class="nx">args</span><span class="p">...</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">verbose</span>
+
+    <span class="nv">handleOptions: </span><span class="o">=&gt;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">logFn</span>    <span class="o">?=</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">verbose</span>  <span class="o">?=</span> <span class="kc">false</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">debug</span>    <span class="o">?=</span> <span class="kc">false</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">login</span>    <span class="o">?=</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">USER</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">location</span> <span class="o">?=</span> <span class="nx">require</span><span class="p">(</span><span class="s">&#39;os&#39;</span><span class="p">).</span><span class="nx">hostname</span><span class="p">()</span> <span class="o">||</span> <span class="s">&#39;-&#39;</span>
+        <span class="nx">@options</span><span class="p">.</span><span class="nx">agent</span>    <span class="o">?=</span> <span class="s">&#39;node-netsoul&#39;</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">password</span><span class="o">?</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="s">&#39;password is not specified&#39;</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">nsconnect</span><span class="o">?</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="s">&#39;nsconnect is not specified&#39;</span>
+        <span class="vi">@ns = </span><span class="nx">@options</span><span class="p">.</span><span class="nx">nsconnect</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::handleOptions&#39;</span><span class="p">,</span> <span class="nx">@options</span>
+
+    <span class="nv">setupClient: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::setupClient&#39;</span>
+
+    <span class="nv">setupConnect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::setup&#39;</span>
+        <span class="nx">@ns</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;connect&#39;</span><span class="p">,</span>    <span class="nx">@onConnect</span>
+        <span class="nx">@ns</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;message&#39;</span><span class="p">,</span>    <span class="nx">@onMessage</span>
+        <span class="nx">@ns</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;error&#39;</span><span class="p">,</span>      <span class="nx">@onError</span>
+        <span class="nx">@ns</span><span class="p">.</span><span class="kc">on</span> <span class="s">&#39;disconnect&#39;</span><span class="p">,</span> <span class="nx">@onDisconnect</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>nsconnect wrappers</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nv">connect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::connect&#39;</span>
+        <span class="nx">do</span> <span class="nx">@ns</span><span class="p">.</span><span class="nx">connect</span>
+
+    <span class="nv">send: </span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@verbose</span> <span class="s">&#39;ClientBase::send&#39;</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="nx">@ns</span><span class="p">.</span><span class="nx">send</span> <span class="nx">data</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>nsconnect handlers</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nv">onDisconnect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::onDisconnect&#39;</span>
+
+    <span class="nv">onMessage: </span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@verbose</span> <span class="s">&#39;ClientBase::onMessage&#39;</span><span class="p">,</span> <span class="nx">message</span><span class="p">.</span><span class="nx">line</span>
+        <span class="k">if</span> <span class="nx">message</span><span class="p">.</span><span class="nx">type</span><span class="o">?</span>
+            <span class="nv">handlerName = </span><span class="s">&quot;message_</span><span class="si">#{</span><span class="nx">message</span><span class="p">.</span><span class="nx">type</span><span class="si">}</span><span class="s">&quot;</span>
+            <span class="nx">@debug</span> <span class="s">&quot;ClientBase::onMessage, type=</span><span class="si">#{</span><span class="nx">handlerName</span><span class="si">}</span><span class="s">&quot;</span>
+            <span class="nx">@emit</span> <span class="nx">handlerName</span><span class="p">,</span> <span class="nx">message</span>
+            <span class="k">if</span> <span class="nx">@</span><span class="p">[</span><span class="nx">handlerName</span><span class="p">]</span><span class="o">?</span>
+                <span class="nx">@</span><span class="p">[</span><span class="nx">handlerName</span><span class="p">]</span> <span class="nx">message</span>
+
+    <span class="nv">onError: </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::onError&#39;</span><span class="p">,</span> <span class="nx">error</span>
+
+    <span class="nv">onConnect: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&#39;ClientBase::onConnect&#39;</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>client handlers</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="k">class</span> <span class="nx">ClientAuth</span> <span class="k">extends</span> <span class="nx">ClientBase</span>
+    <span class="nv">setupClient: </span><span class="o">=&gt;</span>
+        <span class="k">super</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientAuth::setupClient&quot;</span>
+        <span class="vi">@authenticated = </span><span class="kc">false</span>
+        <span class="vi">@auth_step = </span><span class="mi">0</span>
+
+    <span class="nv">message_salut: </span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientAuth::message_salut&quot;</span><span class="p">,</span> <span class="nx">message</span><span class="p">.</span><span class="nx">line</span>
+        <span class="vi">@handshake = </span><span class="nx">message</span><span class="p">.</span><span class="nx">split</span>
+        <span class="nx">@send</span> <span class="p">[</span><span class="s">&#39;auth_ag&#39;</span><span class="p">,</span> <span class="s">&#39;ext_user&#39;</span><span class="p">,</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> <span class="s">&#39;none&#39;</span><span class="p">]</span>
+
+    <span class="nv">message_rep: </span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nv">code = </span><span class="nx">message</span><span class="p">.</span><span class="nx">split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@authenticated</span>
+            <span class="k">if</span> <span class="nx">@auth_step</span> <span class="o">is</span> <span class="mi">0</span>
+                <span class="nx">do</span> <span class="nx">@readyForHandshake</span>
+            <span class="k">if</span> <span class="nx">@auth_step</span> <span class="o">is</span> <span class="mi">1</span>
+                <span class="nx">do</span> <span class="nx">@handshakeAccepted</span>
+            <span class="nx">@auth_step</span><span class="o">++</span>
+
+    <span class="nv">readyForHandshake: </span><span class="o">=&gt;</span>
+        <span class="nv">concat    = </span><span class="s">&quot;</span><span class="si">#{</span><span class="nx">@handshake</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s">-</span><span class="si">#{</span><span class="nx">@handshake</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s">/</span><span class="si">#{</span><span class="nx">@handshake</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="si">}#{</span><span class="nx">@options</span><span class="p">.</span><span class="nx">password</span><span class="si">}</span><span class="s">&quot;</span>
+        <span class="nv">login     = </span><span class="nx">@options</span><span class="p">.</span><span class="nx">login</span>
+        <span class="nv">hash      = </span><span class="nx">crypto</span><span class="p">.</span><span class="nx">createHash</span><span class="p">(</span><span class="s">&#39;md5&#39;</span><span class="p">).</span><span class="nx">update</span><span class="p">(</span><span class="nx">concat</span><span class="p">).</span><span class="nx">digest</span><span class="p">(</span><span class="s">&quot;hex&quot;</span><span class="p">)</span>
+        <span class="nv">agent     = </span><span class="nb">encodeURIComponent</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">agent</span>
+        <span class="nv">location  = </span><span class="nb">encodeURIComponent</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">location</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientAuth::message_salut&quot;</span><span class="p">,</span> <span class="s">&quot;login=</span><span class="si">#{</span><span class="nx">login</span><span class="si">}</span><span class="s">, concat=</span><span class="si">#{</span><span class="nx">concat</span><span class="si">}</span><span class="s">, hash=</span><span class="si">#{</span><span class="nx">hash</span><span class="si">}</span><span class="s">, location=</span><span class="si">#{</span><span class="nx">location</span><span class="si">}</span><span class="s">, agent=</span><span class="si">#{</span><span class="nx">agent</span><span class="si">}</span><span class="s">&quot;</span>
+        <span class="nx">@send</span> <span class="p">[</span><span class="s">&#39;ext_user_log&#39;</span><span class="p">,</span> <span class="nx">login</span><span class="p">,</span> <span class="nx">hash</span><span class="p">,</span> <span class="nx">agent</span><span class="p">,</span> <span class="nx">location</span><span class="p">]</span>
+
+    <span class="nv">handshakeAccepted: </span><span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientAuth::handshakeAccepted&quot;</span>
+        <span class="vi">@authenticated = </span><span class="kc">true</span>
+        <span class="nx">@emit</span> <span class="s">&#39;authenticate&#39;</span>
+
+    <span class="nv">message_ping: </span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientAuth::message_pong&quot;</span><span class="p">,</span> <span class="nx">message</span>
+        <span class="nx">@send</span> <span class="nx">message</span><span class="p">.</span><span class="nx">split</span>
+
+<span class="k">class</span> <span class="nx">ClientDaemon</span> <span class="k">extends</span> <span class="nx">ClientAuth</span>
+    <span class="nv">setupClient: </span><span class="o">-&gt;</span>
+        <span class="k">super</span>
+        <span class="nx">@debug</span> <span class="s">&quot;ClientDaemon::setupClient&quot;</span>
+        <span class="nx">@</span><span class="kc">on</span> <span class="s">&#39;authenticate&#39;</span><span class="p">,</span> <span class="o">=&gt;</span>
+            <span class="nx">@send</span> <span class="p">[</span><span class="s">&#39;user_cmd&#39;</span><span class="p">,</span> <span class="s">&#39;state&#39;</span><span class="p">,</span> <span class="s">&#39;actif&#39;</span><span class="p">]</span>
+
+<span class="nv">module.exports =</span>
+    <span class="nv">base: </span>      <span class="nx">ClientBase</span>
+    <span class="nv">auth: </span>      <span class="nx">ClientAuth</span>
+    <span class="nv">daemon: </span>    <span class="nx">ClientDaemon</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

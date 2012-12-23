@@ -21,7 +21,7 @@ class ClientBase extends utils.PubSub
         @options.verbose  ?= false
         @options.debug    ?= false
         @options.login    ?= process.env.USER
-        @options.location ?= require('os').hostname() || '-'
+        @options.location ?= '-'
         @options.agent    ?= 'node-netsoul'
         if not @options.password?
             throw new Error 'password is not specified'

@@ -1,6 +1,6 @@
 {
   "name": "netsoul",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "netsoul protocol library",
   "main": "index.js",
   "directories": {
@@ -19,7 +19,8 @@
   },
   "devDependencies": {
     "coffee-script": ">=1.4",
-    "docco": ">=0.4"
+    "docco": ">=0.4",
+    "browserify": ">=2.35"
   },
   "keywords": [
     "netsoul",
